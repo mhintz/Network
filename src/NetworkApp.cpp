@@ -35,7 +35,8 @@ public:
 	FboCubeMapLayeredRef mRenderFbo;
 	mat4 mFaceCams[6];
 	gl::UboRef mMatrixBuffer;
-	gl::GlslProgRef mRenderIntoCubeMap;
+	gl::GlslProgRef mRenderLinesToCubeMap;
+	gl::GlslProgRef mRenderPointsToCubeMap;
 };
 
 int const numNetworkNodes = 600;
@@ -75,8 +76,11 @@ void NetworkApp::setup()
 	mMatrixBuffer = gl::Ubo::create(sizeof(mat4) * 6, mFaceCams);
 	mMatrixBuffer->bindBufferBase(1);
 
-	mRenderIntoCubeMap = gl::GlslProg::create(loadAsset("renderIntoCubeMap_v.glsl"), loadAsset("renderIntoCubeMap_f.glsl"), loadAsset("renderIntoCubeMap_g.glsl"));
-	mRenderIntoCubeMap->uniformBlock("uMatrices", 1);
+	mRenderLinesToCubeMap = gl::GlslProg::create(loadAsset("renderIntoCubeMap_v.glsl"), loadAsset("renderIntoCubeMap_f.glsl"), loadAsset("renderIntoCubeMap_lines_g.glsl"));
+	mRenderLinesToCubeMap->uniformBlock("uMatrices", 1);
+
+	mRenderPointsToCubeMap = gl::GlslProg::create(loadAsset("renderIntoCubeMap_v.glsl"), loadAsset("renderIntoCubeMap_f.glsl"), loadAsset("renderIntoCubeMap_points_g.glsl"));
+	mRenderPointsToCubeMap->uniformBlock("uMatrices", 1);
 
 	for (int idx = 0; idx < numNetworkNodes; idx++) {
 		mNetworkNodes.push_back(randVec3());
@@ -144,11 +148,21 @@ void NetworkApp::draw()
 
 		gl::clear(Color(0, 0, 0));
 
-		gl::ScopedGlslProg scpShader(mRenderIntoCubeMap);
+		{
+			gl::ScopedGlslProg scpShader(mRenderLinesToCubeMap);
 
-		gl::ScopedColor scpColor(Color(1, 1, 1));
+			gl::ScopedColor scpColor(Color(1, 1, 1));
 
-		gl::draw(mLinksMesh);
+			gl::draw(mLinksMesh);
+		}
+
+		{
+			gl::ScopedGlslProg scpShader(mRenderPointsToCubeMap);
+
+			gl::ScopedColor scpColor(Color(1, 1, 1));
+
+			gl::draw(mNodesMesh);
+		}
 	}
 
 	{

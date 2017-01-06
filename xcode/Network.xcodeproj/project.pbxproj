@@ -29,6 +29,12 @@
 		D6C0C437B380481198AED009 /* DoubleFbo.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 3F79B615DE4440498844BBD7 /* DoubleFbo.cpp */; };
 		DF881780A6B44A7C8F34C635 /* GeomEater.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 7BACD6F31F9D4DE3A2B1DFF6 /* GeomEater.cpp */; };
 		EF7BC5371E1F283F0061ADF9 /* FboCubeMapLayered.cpp in Sources */ = {isa = PBXBuildFile; fileRef = EF7BC5351E1F283F0061ADF9 /* FboCubeMapLayered.cpp */; };
+		EF7BC53D1E1F50BB0061ADF9 /* renderCubeMap_f.glsl in Resources */ = {isa = PBXBuildFile; fileRef = EF7BC5381E1F50BB0061ADF9 /* renderCubeMap_f.glsl */; };
+		EF7BC53E1E1F50BB0061ADF9 /* renderCubeMap_v.glsl in Resources */ = {isa = PBXBuildFile; fileRef = EF7BC5391E1F50BB0061ADF9 /* renderCubeMap_v.glsl */; };
+		EF7BC53F1E1F50BB0061ADF9 /* renderIntoCubeMap_f.glsl in Resources */ = {isa = PBXBuildFile; fileRef = EF7BC53A1E1F50BB0061ADF9 /* renderIntoCubeMap_f.glsl */; };
+		EF7BC5411E1F50BB0061ADF9 /* renderIntoCubeMap_v.glsl in Resources */ = {isa = PBXBuildFile; fileRef = EF7BC53C1E1F50BB0061ADF9 /* renderIntoCubeMap_v.glsl */; };
+		EF7BC5451E1FCB730061ADF9 /* renderIntoCubeMap_lines_g.glsl in Resources */ = {isa = PBXBuildFile; fileRef = EF7BC5431E1FCB730061ADF9 /* renderIntoCubeMap_lines_g.glsl */; };
+		EF7BC5461E1FCB730061ADF9 /* renderIntoCubeMap_points_g.glsl in Resources */ = {isa = PBXBuildFile; fileRef = EF7BC5441E1FCB730061ADF9 /* renderIntoCubeMap_points_g.glsl */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -75,6 +81,12 @@
 		E8438FC75E2F4E3AB626F08F /* Node.hpp */ = {isa = PBXFileReference; lastKnownFileType = "\"\""; name = Node.hpp; path = "../../../../Code/cinder/blocks/core-util/Node.hpp"; sourceTree = "<group>"; };
 		EF7BC5351E1F283F0061ADF9 /* FboCubeMapLayered.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = FboCubeMapLayered.cpp; path = "../../../cinder/blocks/core-util/FboCubeMapLayered.cpp"; sourceTree = "<group>"; };
 		EF7BC5361E1F283F0061ADF9 /* FboCubeMapLayered.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = FboCubeMapLayered.h; path = "../../../cinder/blocks/core-util/FboCubeMapLayered.h"; sourceTree = "<group>"; };
+		EF7BC5381E1F50BB0061ADF9 /* renderCubeMap_f.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = renderCubeMap_f.glsl; path = ../assets/renderCubeMap_f.glsl; sourceTree = "<group>"; };
+		EF7BC5391E1F50BB0061ADF9 /* renderCubeMap_v.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = renderCubeMap_v.glsl; path = ../assets/renderCubeMap_v.glsl; sourceTree = "<group>"; };
+		EF7BC53A1E1F50BB0061ADF9 /* renderIntoCubeMap_f.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = renderIntoCubeMap_f.glsl; path = ../assets/renderIntoCubeMap_f.glsl; sourceTree = "<group>"; };
+		EF7BC53C1E1F50BB0061ADF9 /* renderIntoCubeMap_v.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = renderIntoCubeMap_v.glsl; path = ../assets/renderIntoCubeMap_v.glsl; sourceTree = "<group>"; };
+		EF7BC5431E1FCB730061ADF9 /* renderIntoCubeMap_lines_g.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = renderIntoCubeMap_lines_g.glsl; path = ../assets/renderIntoCubeMap_lines_g.glsl; sourceTree = "<group>"; };
+		EF7BC5441E1FCB730061ADF9 /* renderIntoCubeMap_points_g.glsl */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = text; name = renderIntoCubeMap_points_g.glsl; path = ../assets/renderIntoCubeMap_points_g.glsl; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -175,6 +187,7 @@
 		29B97314FDCFA39411CA2CEA /* Network */ = {
 			isa = PBXGroup;
 			children = (
+				EF7BC5421E1F50C10061ADF9 /* Assets */,
 				01B97315FEAEA392516A2CEA /* Blocks */,
 				29B97315FDCFA39411CA2CEA /* Headers */,
 				080E96DDFE201D6D7F000001 /* Source */,
@@ -253,6 +266,19 @@
 			name = ..;
 			sourceTree = "<group>";
 		};
+		EF7BC5421E1F50C10061ADF9 /* Assets */ = {
+			isa = PBXGroup;
+			children = (
+				EF7BC5431E1FCB730061ADF9 /* renderIntoCubeMap_lines_g.glsl */,
+				EF7BC5441E1FCB730061ADF9 /* renderIntoCubeMap_points_g.glsl */,
+				EF7BC5381E1F50BB0061ADF9 /* renderCubeMap_f.glsl */,
+				EF7BC5391E1F50BB0061ADF9 /* renderCubeMap_v.glsl */,
+				EF7BC53A1E1F50BB0061ADF9 /* renderIntoCubeMap_f.glsl */,
+				EF7BC53C1E1F50BB0061ADF9 /* renderIntoCubeMap_v.glsl */,
+			);
+			name = Assets;
+			sourceTree = "<group>";
+		};
 		FE0300F4618F4394B72251B6 /* cpp */ = {
 			isa = PBXGroup;
 			children = (
@@ -313,6 +339,12 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				EF7BC53F1E1F50BB0061ADF9 /* renderIntoCubeMap_f.glsl in Resources */,
+				EF7BC53E1E1F50BB0061ADF9 /* renderCubeMap_v.glsl in Resources */,
+				EF7BC5461E1FCB730061ADF9 /* renderIntoCubeMap_points_g.glsl in Resources */,
+				EF7BC5411E1F50BB0061ADF9 /* renderIntoCubeMap_v.glsl in Resources */,
+				EF7BC5451E1FCB730061ADF9 /* renderIntoCubeMap_lines_g.glsl in Resources */,
+				EF7BC53D1E1F50BB0061ADF9 /* renderCubeMap_f.glsl in Resources */,
 				37EEC0C4E1DE402A9DD1BDD4 /* CinderApp.icns in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
