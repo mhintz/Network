@@ -1,3 +1,9 @@
+#include <vector>
+#include <unordered_set>
+#include <utility>
+#include <algorithm>
+#include <numeric>
+
 #include "cinder/app/App.h"
 #include "cinder/app/RendererGl.h"
 #include "cinder/gl/gl.h"
@@ -5,11 +11,23 @@
 #include "cinder/CameraUi.h"
 #include "cinder/Rand.h"
 
+#include "CoreMath.h"
 #include "FboCubeMapLayered.h"
 
 using namespace ci;
 using namespace ci::app;
-using namespace std;
+
+class NetworkNode {
+public:
+	bool mInfected = false;
+	uint mId;
+	vec3 mPos;
+	std::unordered_set<uint> mLinks;
+
+	NetworkNode(uint id, vec3 pos) : mId(id), mPos(pos) {}
+};
+
+typedef std::shared_ptr<NetworkNode> NetworkNodeRef;
 
 class NetworkApp : public App {
 public:
@@ -24,8 +42,8 @@ public:
 	CameraPersp mCamera;
 	CameraUi mCameraUi;
 
-	vector<vec3> mNetworkNodes;
-	vector<vec3> mNetworkLinks;
+	std::vector<NetworkNode> mNetworkNodes;
+	std::vector<std::pair<uint, uint>> mNetworkLinks;
 
 	gl::VboMeshRef mNodesMesh;
 	gl::VboMeshRef mLinksMesh;
@@ -73,36 +91,75 @@ void NetworkApp::setup()
 		mFaceCams[idx] = result;
 	}
 
+	int const matrixBindingPoint = 1;
+
 	mMatrixBuffer = gl::Ubo::create(sizeof(mat4) * 6, mFaceCams);
-	mMatrixBuffer->bindBufferBase(1);
+	mMatrixBuffer->bindBufferBase(matrixBindingPoint);
 
 	mRenderLinesToCubeMap = gl::GlslProg::create(loadAsset("renderIntoCubeMap_v.glsl"), loadAsset("renderIntoCubeMap_f.glsl"), loadAsset("renderIntoCubeMap_lines_g.glsl"));
-	mRenderLinesToCubeMap->uniformBlock("uMatrices", 1);
+	mRenderLinesToCubeMap->uniformBlock("uMatrices", matrixBindingPoint);
 
 	mRenderPointsToCubeMap = gl::GlslProg::create(loadAsset("renderIntoCubeMap_v.glsl"), loadAsset("renderIntoCubeMap_f.glsl"), loadAsset("renderIntoCubeMap_points_g.glsl"));
-	mRenderPointsToCubeMap->uniformBlock("uMatrices", 1);
+	mRenderPointsToCubeMap->uniformBlock("uMatrices", matrixBindingPoint);
 
 	for (int idx = 0; idx < numNetworkNodes; idx++) {
-		mNetworkNodes.push_back(randVec3());
+		mNetworkNodes.push_back(NetworkNode(idx, randVec3()));
+		if (randFloat() < 0.1) { mNetworkNodes[idx].mInfected = true; }
 	}
 
-	for (vec3 & nodePos : mNetworkNodes) {
-		for (vec3 & otherPos : mNetworkNodes) {
-			float dist = distance(nodePos, otherPos);
-			if (dist > 0 && dist < 0.2) {
-				mNetworkLinks.push_back(nodePos);
-				mNetworkLinks.push_back(otherPos);
-			}
+	std::vector<NetworkNode *> nodePointers;
+	for (auto & node : mNetworkNodes) {
+		nodePointers.push_back(& node);
+	}
+
+	for (auto & node : mNetworkNodes) {
+		// Sort according to distance
+		std::sort(nodePointers.begin(), nodePointers.end(), [& node] (NetworkNode * p1, NetworkNode * p2) {
+			float d1 = distance(node.mPos, p1->mPos);
+			float d2 = distance(node.mPos, p2->mPos);
+			return d1 < d2;
+		});
+		// Take the nearest six (knowing the the first one will be the node itself)
+		for (int i = 1; i <= 6; i++) {
+			node.mLinks.insert(nodePointers[i]->mId);
+			nodePointers[i]->mLinks.insert(node.mId);
+			mNetworkLinks.push_back(std::make_pair(nodePointers[i]->mId, node.mId));
 		}
 	}
 
-	auto nodesBuf = gl::Vbo::create(GL_ARRAY_BUFFER, mNetworkNodes);
-	auto nodesFmt = geom::BufferLayout({ geom::AttribInfo(geom::POSITION, 3, 0, 0) });
-	mNodesMesh = gl::VboMesh::create(mNetworkNodes.size(), GL_POINTS, { { nodesFmt, nodesBuf } });
+	size_t numNodes = mNetworkNodes.size();
 
-	auto linksBuf = gl::Vbo::create(GL_ARRAY_BUFFER, mNetworkLinks);
+	std::vector<vec3> nodePositions(numNodes);
+	std::vector<vec3> nodeColors(numNodes);
+	for (int idx = 0; idx < numNodes; idx++) {
+		nodePositions[idx] = mNetworkNodes[idx].mPos;
+		nodeColors[idx] = mNetworkNodes[idx].mInfected ? vec3(1, 0, 0) : vec3(0, 0, 1);
+	}
+
+	auto nodesBuf = gl::Vbo::create(GL_ARRAY_BUFFER, nodePositions);
+	auto nodesFmt = geom::BufferLayout({ geom::AttribInfo(geom::POSITION, 3, 0, 0) });
+	auto nodeColorsBuf = gl::Vbo::create(GL_ARRAY_BUFFER, nodeColors, GL_DYNAMIC_DRAW);
+	auto nodeColorsFmt = geom::BufferLayout({ geom::AttribInfo(geom::COLOR, 3, 0, 0) });
+	mNodesMesh = gl::VboMesh::create(numNodes, GL_POINTS, { { nodesFmt, nodesBuf }, { nodeColorsFmt, nodeColorsBuf } });
+
+	size_t numLinks = mNetworkLinks.size();
+
+	std::vector<vec3> linkPositions(2 * numLinks);
+	std::vector<vec3> linkColors(2 * numLinks);
+	for (int idx = 0; idx < numLinks; idx++) {
+		uint id1 = mNetworkLinks[idx].first;
+		uint id2 = mNetworkLinks[idx].second;
+		linkPositions[2 * idx] = mNetworkNodes[id1].mPos;
+		linkPositions[2 * idx + 1] = mNetworkNodes[id2].mPos;
+		linkColors[2 * idx] = mNetworkNodes[id1].mInfected ? vec3(1, 0, 0) : vec3(0, 0, 1);
+		linkColors[2 * idx + 1] = mNetworkNodes[id2].mInfected ? vec3(1, 0, 0) : vec3(0, 0, 1);
+	}
+
+	auto linksBuf = gl::Vbo::create(GL_ARRAY_BUFFER, linkPositions);
 	auto linksFmt = geom::BufferLayout({ geom::AttribInfo(geom::POSITION, 3, 0, 0) });
-	mLinksMesh = gl::VboMesh::create(mNetworkLinks.size(), GL_LINES, { { linksFmt, linksBuf } });
+	auto linkColorsBuf = gl::Vbo::create(GL_ARRAY_BUFFER, linkColors, GL_DYNAMIC_DRAW);
+	auto linkColorsFmt = geom::BufferLayout({ geom::AttribInfo(geom::COLOR, 3, 0, 0) });
+	mLinksMesh = gl::VboMesh::create(2 * numLinks, GL_LINES, { { linksFmt, linksBuf }, { linkColorsFmt, linkColorsBuf } });
 
 	mRenderCubeMap = gl::GlslProg::create(loadAsset("renderCubeMap_v.glsl"), loadAsset("renderCubeMap_f.glsl"));
 	mRenderCubeMap->uniform("uCubeMap", 0);
@@ -123,6 +180,45 @@ void NetworkApp::keyDown(KeyEvent evt) {
 
 void NetworkApp::update()
 {
+	std::vector<bool> willBeInfected(mNetworkNodes.size(), false);
+
+	for (int idx = 0; idx < mNetworkNodes.size(); idx++) {
+		auto & node = mNetworkNodes[idx];
+		if (node.mInfected) {
+			if (randFloat() < 0.04) { willBeInfected[node.mId] = false; } else { willBeInfected[node.mId] = true; }
+			for (uint otherId : node.mLinks) {
+				if (randFloat() < 0.01) { willBeInfected[otherId] = true; }
+			}
+		}
+	}
+
+	uint numInfected = std::accumulate(willBeInfected.begin(), willBeInfected.end(), 0, [] (uint count, bool inf) { return count + (inf ? 1 : 0); });
+	if (numInfected < 10) {
+		for (auto & node : mNetworkNodes) {
+			if (randFloat() < 10.f / numNetworkNodes) { node.mInfected = true; }
+		}
+	}
+
+	for (int idx = 0; idx < mNetworkNodes.size(); idx++) {
+		mNetworkNodes[idx].mInfected = willBeInfected[idx];
+	}
+
+	std::vector<vec3> nodeColors(mNetworkNodes.size());
+	for (int idx = 0; idx < mNetworkNodes.size(); idx++) {
+		nodeColors[idx] = mNetworkNodes[idx].mInfected ? vec3(1, 0, 0) : vec3(0, 0, 1);
+	}
+
+	mNodesMesh->findAttrib(geom::COLOR)->second->copyData(vectorByteSize(nodeColors), nodeColors.data());
+
+	std::vector<vec3> linkColors(2 * mNetworkLinks.size());
+	for (int idx = 0; idx < mNetworkLinks.size(); idx++) {
+		uint id1 = mNetworkLinks[idx].first;
+		uint id2 = mNetworkLinks[idx].second;
+		linkColors[2 * idx] = mNetworkNodes[id1].mInfected ? vec3(1, 0, 0) : vec3(0, 0, 1);
+		linkColors[2 * idx + 1] = mNetworkNodes[id2].mInfected ? vec3(1, 0, 0) : vec3(0, 0, 1);
+	}
+
+	mLinksMesh->findAttrib(geom::COLOR)->second->copyData(vectorByteSize(linkColors), linkColors.data());
 }
 
 void NetworkApp::draw()
@@ -132,8 +228,6 @@ void NetworkApp::draw()
 	{
 		gl::ScopedMatrices scpMat;
 		gl::setMatrices(mCamera);
-
-		gl::ScopedColor scpColor(Color(1, 1, 1));
 
 		gl::draw(mNodesMesh);
 		gl::draw(mLinksMesh);
@@ -151,15 +245,11 @@ void NetworkApp::draw()
 		{
 			gl::ScopedGlslProg scpShader(mRenderLinesToCubeMap);
 
-			gl::ScopedColor scpColor(Color(1, 1, 1));
-
 			gl::draw(mLinksMesh);
 		}
 
 		{
 			gl::ScopedGlslProg scpShader(mRenderPointsToCubeMap);
-
-			gl::ScopedColor scpColor(Color(1, 1, 1));
 
 			gl::draw(mNodesMesh);
 		}
@@ -174,7 +264,7 @@ void NetworkApp::draw()
 		gl::ScopedTextureBind scpTex(mRenderFbo->getColorTex(), cubeMapBindPoint);
 		glGenerateMipmap(mRenderFbo->getColorTex()->getTarget()); // Do this each frame?
 
-		gl::draw(geom::Sphere().radius(0.5f));
+		gl::draw(geom::Sphere().radius(0.5f).subdivisions(50));
 		// gl::draw(geom::Sphere().radius(1.0f));
 		// gl::draw(geom::Cube().size(1.0f, 1.0f, 1.0f));
 	}
