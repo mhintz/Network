@@ -68,9 +68,11 @@ void NetworkApp::prepSettings(Settings * settings) {
 
 void NetworkApp::setup()
 {
+	// Set up the external user camera
 	mCamera.lookAt(vec3(0, 0, 4), vec3(0), vec3(0, 1, 0));
 	mCameraUi = CameraUi(& mCamera, getWindow());
 
+	// Set up the 360 degree cube map camera
 	auto cubeMapFormat = gl::TextureCubeMap::Format()
 		.magFilter(GL_LINEAR)
 		.minFilter(GL_LINEAR)
@@ -102,6 +104,7 @@ void NetworkApp::setup()
 	mRenderPointsToCubeMap = gl::GlslProg::create(loadAsset("renderIntoCubeMap_v.glsl"), loadAsset("renderIntoCubeMap_f.glsl"), loadAsset("renderIntoCubeMap_points_g.glsl"));
 	mRenderPointsToCubeMap->uniformBlock("uMatrices", matrixBindingPoint);
 
+	// Set up the simulation data
 	for (int idx = 0; idx < numNetworkNodes; idx++) {
 		mNetworkNodes.push_back(NetworkNode(idx, randVec3()));
 		if (randFloat() < 0.1) { mNetworkNodes[idx].mInfected = true; }
@@ -127,6 +130,7 @@ void NetworkApp::setup()
 		}
 	}
 
+	// Set up OpenGL data structures on the GPU
 	size_t numNodes = mNetworkNodes.size();
 
 	std::vector<vec3> nodePositions(numNodes);
@@ -161,9 +165,11 @@ void NetworkApp::setup()
 	auto linkColorsFmt = geom::BufferLayout({ geom::AttribInfo(geom::COLOR, 3, 0, 0) });
 	mLinksMesh = gl::VboMesh::create(2 * numLinks, GL_LINES, { { linksFmt, linksBuf }, { linkColorsFmt, linkColorsBuf } });
 
+	// Set up for rendering the contents of the 360 degree cube map camera
 	mRenderCubeMap = gl::GlslProg::create(loadAsset("renderCubeMap_v.glsl"), loadAsset("renderCubeMap_f.glsl"));
 	mRenderCubeMap->uniform("uCubeMap", 0);
 
+	// OpenGL state stuff
 	gl::enableDepth();
 	gl::pointSize(5.0);
 }
@@ -271,7 +277,7 @@ void NetworkApp::draw()
 
 	// Debug zone
 	{
-		// gl::drawHorizontalCross(mRenderFbo->getColorTex(), Rectf(0, 0, 600.0f, 300.0f));
+		 gl::drawHorizontalCross(mRenderFbo->getColorTex(), Rectf(0, 0, 1200.0f, 600.0f));
 	}
 }
 
