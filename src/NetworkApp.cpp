@@ -57,7 +57,7 @@ public:
 	gl::GlslProgRef mRenderPointsToCubeMap;
 };
 
-int const numNetworkNodes = 600;
+int const numNetworkNodes = 1024;
 int const cubeMapSide = 1600;
 int const cubeMapBindPoint = 0;
 
